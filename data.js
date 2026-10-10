@@ -36,6 +36,10 @@ window.JARVIS_DATA = (function () {
     // Ist false und es gibt keine echten Releases, erscheint weder die
     // Update-Leiste noch ein Download.
     showSampleData: true,
+
+    // true  = Text lässt sich nicht markieren/kopieren und die Seite nicht zoomen.
+    // false = normales Verhalten. (Schützt nur vor Gelegenheitsnutzern, siehe app.js.)
+    protectContent: true,
   };
 
   /* ---------------------------------------------------------------------------

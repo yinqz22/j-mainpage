@@ -2,7 +2,7 @@
    JARVIS — app logic
    -----------------------------------------------------------------------------
    Diese Datei enthält KEINE Release- oder Funktionsdaten.
-   Alles wird aus js/data.js (window.JARVIS_DATA) gelesen und gerendert.
+   Alles wird aus data.js (window.JARVIS_DATA) gelesen und gerendert.
    Bei Updates musst du hier nichts ändern.
    ========================================================================== */
 
@@ -10,7 +10,7 @@
   'use strict';
 
   const D = window.JARVIS_DATA;
-  if (!D) { console.error('JARVIS: js/data.js not loaded.'); return; }
+  if (!D) { console.error('JARVIS: data.js not loaded.'); return; }
 
   const cfg = D.siteConfig;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -105,6 +105,33 @@
   }
 
   /* ---------- hero: background blocks ---------------------------------------- */
+  /* ---------- content protection (siteConfig.protectContent) ------------------
+     Blocks selecting/copying text, the context menu, dragging and zooming
+     (pinch, Ctrl+wheel, Ctrl +/-/0). Hinweis: Das hält nur Gelegenheitsnutzer ab.
+     Screenshots, "Quelltext anzeigen" und der Zoom im Browser-Menü lassen sich
+     im Browser nicht wirklich verhindern. Zoomsperre erschwert außerdem die
+     Nutzung für Menschen mit Sehschwäche. Abschalten: protectContent = false. */
+  function initProtection() {
+    if (!cfg.protectContent) return;
+    document.documentElement.classList.add('protected');
+    const inField = (t) => {
+      const el = t && t.nodeType === 1 ? t : t && t.parentElement;
+      return !!(el && el.closest && el.closest('input, textarea, select'));
+    };
+    ['copy', 'cut', 'dragstart', 'selectstart', 'contextmenu'].forEach((ev) =>
+      document.addEventListener(ev, (e) => { if (!inField(e.target)) e.preventDefault(); }));
+    document.addEventListener('keydown', (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = String(e.key).toLowerCase();
+      if (['+', '=', '-', '_', '0'].indexOf(k) !== -1) e.preventDefault();                          // keyboard zoom
+      else if (!inField(e.target) && ['a', 'c', 'x', 's', 'u'].indexOf(k) !== -1) e.preventDefault(); // select all / copy / save / source
+    });
+    window.addEventListener('wheel', (e) => { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false }); // trackpad pinch + Ctrl+wheel
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach((ev) =>
+      document.addEventListener(ev, (e) => e.preventDefault()));                                      // iOS pinch
+    document.addEventListener('touchmove', (e) => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  }
+
   function initBlocks() {
     const root = $('#bgBlocks');
     const count = window.innerWidth < 700 ? 20 : 40;
@@ -407,6 +434,7 @@
   }
 
   /* ---------- boot ------------------------------------------------------------------- */
+  initProtection();
   initBlocks();
   initStatements();
   renderCta();
